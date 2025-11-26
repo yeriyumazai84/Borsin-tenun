@@ -10,7 +10,7 @@
       margin: 0;
       padding: 0;
       background: linear-gradient(135deg, #dce9ff, #f8fbff);
-      min-height: 70vh;
+      min-height: 100vh; /* Ganti 70vh jadi 100vh biar full layar */
       display: flex;
       justify-content: center;
       align-items: center;
@@ -22,22 +22,34 @@
     .logo {
       width: 120px;
       height: 120px;
-      object-fit: contain;
+      object-fit: contain; /* Agar gambar tidak gepeng */
+      object-fit: cover;   /* Alternatif: agar bulat sempurna */
       margin-bottom: 15px;
       border-radius: 50%;
       background-color: white;
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
       cursor: pointer;
       transition: transform 0.2s;
+      border: 4px solid white;
     }
 
     .logo:hover {
       transform: scale(1.05);
+      border-color: #007bff;
     }
 
     h1 {
       color: #004aad;
-      margin-bottom: 40px;
+      margin-bottom: 10px;
+    }
+
+    .status-db {
+      font-size: 12px;
+      margin-bottom: 30px;
+      padding: 5px 15px;
+      border-radius: 20px;
+      background: #eee;
+      color: #666;
     }
 
     .menu {
@@ -67,8 +79,7 @@
     }
 
     footer {
-      position: absolute;
-      bottom: 15px;
+      margin-top: 50px; /* Supaya tidak nempel tombol */
       text-align: center;
       color: #555;
       font-size: 14px;
@@ -78,16 +89,21 @@
       color: #888;
     }
 
-    /* INPUT LOGO TERSEMBUNYI */
-    input[type="file"] {
+    /* INPUT FILE TERSEMBUNYI */
+    #fileInput {
       display: none;
     }
   </style>
 </head>
 <body>
 
+  <img src="https://via.placeholder.com/150" alt="Logo Koperasi" class="logo" id="logo" onclick="document.getElementById('fileInput').click()">
+  
+  <input type="file" id="fileInput" accept="image/*" onchange="gantiLogo(event)">
 
   <h1>BORSIN TENUN</h1>
+  
+  <div id="statusKoneksi" class="status-db">⚪ Menghubungkan ke Database...</div>
 
   <div class="menu">
     <button class="tombol" onclick="window.location.href='gaji.html'">💼 Hitung Gaji Anggota</button>
@@ -99,15 +115,13 @@
   </footer>
 
   <script>
-    // Simpan logo di localStorage agar tetap muncul setelah ditutup
     const logo = document.getElementById('logo');
 
-    window.onload = function() {
-      const logoSimpan = localStorage.getItem('logoBorsin');
-      if (logoSimpan) {
-        logo.src = logoSimpan;
-      }
-    };
+    // Cek apakah ada logo tersimpan di memori browser
+    const logoSimpan = localStorage.getItem('logoBorsin');
+    if (logoSimpan) {
+      logo.src = logoSimpan;
+    }
 
     function gantiLogo(event) {
       const file = event.target.files[0];
@@ -115,11 +129,50 @@
         const reader = new FileReader();
         reader.onload = function(e) {
           logo.src = e.target.result;
-          localStorage.setItem('logoBorsin', e.target.result);
+          localStorage.setItem('logoBorsin', e.target.result); // Simpan sementara di browser
         }
         reader.readAsDataURL(file);
       }
     }
+  </script>
+
+  <script type="module">
+    // Import Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+    // Konfigurasi KSP Anda
+    const firebaseConfig = {
+        apiKey: "AIzaSyDGkbvTCYly1vPfCF79rR4_KPn2b3ZlfjM",
+        authDomain: "ksp-web-d8b13.firebaseapp.com",
+        projectId: "ksp-web-d8b13",
+        storageBucket: "ksp-web-d8b13.firebasestorage.app",
+        messagingSenderId: "283605587368",
+        appId: "1:283605587368:web:ead056e34074824611799d"
+    };
+
+    // Mulai Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Cek Koneksi (Hanya Tes)
+    async function cekKoneksi() {
+        const statusEl = document.getElementById('statusKoneksi');
+        try {
+            // Kita coba baca data kosong sekedar untuk ping server
+            await getDocs(collection(db, "tes_koneksi")); 
+            statusEl.innerHTML = "🟢 Terhubung ke Cloud Database";
+            statusEl.style.color = "green";
+            statusEl.style.fontWeight = "bold";
+        } catch (error) {
+            console.error(error);
+            statusEl.innerHTML = "🔴 Gagal Konek: " + error.message;
+            statusEl.style.color = "red";
+        }
+    }
+
+    // Jalankan cek koneksi saat web dibuka
+    cekKoneksi();
   </script>
 
 </body>
